@@ -1,0 +1,54 @@
+services:
+  nginx:
+    image: nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src/public/:/var/www/public/
+      - ./dockerfiles/nginx/:/etc/nginx/conf.d/
+    depends_on:
+      - php
+
+  php:
+    build:
+      context: ./dockerfiles/php
+    volumes:
+      - ./src:/var/www
+
+  npm:
+    image: node
+    working_dir: /app
+    volumes:
+      - ./src:/app
+    command: tail -f /dev/null
+#    возможно в контейнер придется прокидывать пользователя
+
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user
+    ports:
+      - "3306:3306"                        # Порт для доступа к MySQL
+    volumes:
+      - ./db_data:/var/lib/mysql             # Постоянное хранилище для данных MySQL
+    depends_on:
+      - php
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - "3000:80"                          # Порт, на котором будет доступен phpMyAdmin
+    environment:
+      PMA_HOST: db
+      PMA_USER: user
+      PMA_PASSWORD: user
+    depends_on:
+      - db
+
+volumes:
+  db_data:                                 # Определение постоянного хранилища
